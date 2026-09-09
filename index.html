@@ -207,7 +207,7 @@
         <table class="form-table">
             <tr>
                 <th width="15%">填單日期</th>
-                <td width="35%"><input type="date" id="applyDate" required></td>
+                <td width="35%"><input type="date" id="applyDate" readonly style="background:#eee; cursor: not-allowed; pointer-events: none;" tabindex="-1" required></td>
                 <th width="15%">單據編號</th>
                 <td width="35%"><input type="text" id="formNo" value="ATT-20260909-001" readonly style="background:#eee;"></td>
             </tr>
@@ -297,8 +297,19 @@
 </div>
 
 <script>
-    // 預設填單日期為今天
-    document.getElementById('applyDate').valueAsDate = new Date();
+    // 預設填單日期為當日且不可異動
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const applyDateInput = document.getElementById('applyDate');
+    if (applyDateInput) {
+        applyDateInput.value = `${yyyy}-${mm}-${dd}`;
+    }
+    const formNoInput = document.getElementById('formNo');
+    if (formNoInput) {
+        formNoInput.value = `ATT-${yyyy}${mm}${dd}-001`;
+    }
 
     // 項目與假別連動選單
     const itemOptions = {
