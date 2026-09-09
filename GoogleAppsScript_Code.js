@@ -191,14 +191,14 @@ function sendManagerApprovalEmail(formNo, applyDate, applicantName, department, 
           
           <table style="margin: 0 auto; border-collapse: separate; border-spacing: 16px 0;">
             <tr>
-              <td>
-                <a href="${approveUrl}" target="_blank" style="background: linear-gradient(180deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 13px 32px; border-radius: 10px; font-weight: 800; font-size: 15px; display: inline-block; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35); text-shadow: 0 1px 2px rgba(0,0,0,0.2); letter-spacing: 0.5px;">
-                  ✔&nbsp;&nbsp;部門主管 核准
+              <td bgcolor="#10b981" style="background-color: #10b981; border-radius: 10px; padding: 0; mso-padding-alt: 0;">
+                <a href="${approveUrl}" target="_blank" style="background-color: #10b981; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 15px; display: inline-block; font-family: Arial, sans-serif; letter-spacing: 0.5px;">
+                  &#10004;&nbsp;&nbsp;部門主管 核准
                 </a>
               </td>
-              <td>
-                <a href="${rejectUrl}" target="_blank" style="background: linear-gradient(180deg, #f43f5e 0%, #e11d48 100%); color: #ffffff; text-decoration: none; padding: 13px 32px; border-radius: 10px; font-weight: 800; font-size: 15px; display: inline-block; box-shadow: 0 4px 14px rgba(225, 29, 72, 0.3); text-shadow: 0 1px 2px rgba(0,0,0,0.2); letter-spacing: 0.5px;">
-                  ✕&nbsp;&nbsp;退回修正
+              <td bgcolor="#e11d48" style="background-color: #e11d48; border-radius: 10px; padding: 0; mso-padding-alt: 0;">
+                <a href="${rejectUrl}" target="_blank" style="background-color: #e11d48; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 15px; display: inline-block; font-family: Arial, sans-serif; letter-spacing: 0.5px;">
+                  &#10005;&nbsp;&nbsp;退回修正
                 </a>
               </td>
             </tr>
@@ -309,14 +309,14 @@ function sendCeoApprovalEmail(formNo, applyDate, applicantName, department, tota
           
           <table style="margin: 0 auto; border-collapse: separate; border-spacing: 16px 0;">
             <tr>
-              <td>
-                <a href="${approveUrl}" target="_blank" style="background: linear-gradient(180deg, #ea580c 0%, #c2410c 100%); color: #ffffff; text-decoration: none; padding: 13px 34px; border-radius: 10px; font-weight: 800; font-size: 15px; display: inline-block; box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35); text-shadow: 0 1px 2px rgba(0,0,0,0.25); letter-spacing: 0.5px;">
-                  ✔&nbsp;&nbsp;執行長 核准通過
+              <td bgcolor="#ea580c" style="background-color: #ea580c; border-radius: 10px; padding: 0; mso-padding-alt: 0;">
+                <a href="${approveUrl}" target="_blank" style="background-color: #ea580c; color: #ffffff; text-decoration: none; padding: 14px 34px; border-radius: 10px; font-weight: 800; font-size: 15px; display: inline-block; font-family: Arial, sans-serif; letter-spacing: 0.5px;">
+                  &#10004;&nbsp;&nbsp;執行長 核准通過
                 </a>
               </td>
-              <td>
-                <a href="${rejectUrl}" target="_blank" style="background: linear-gradient(180deg, #f43f5e 0%, #e11d48 100%); color: #ffffff; text-decoration: none; padding: 13px 34px; border-radius: 10px; font-weight: 800; font-size: 15px; display: inline-block; box-shadow: 0 4px 14px rgba(225, 29, 72, 0.3); text-shadow: 0 1px 2px rgba(0,0,0,0.25); letter-spacing: 0.5px;">
-                  ✕&nbsp;&nbsp;退回修正
+              <td bgcolor="#e11d48" style="background-color: #e11d48; border-radius: 10px; padding: 0; mso-padding-alt: 0;">
+                <a href="${rejectUrl}" target="_blank" style="background-color: #e11d48; color: #ffffff; text-decoration: none; padding: 14px 34px; border-radius: 10px; font-weight: 800; font-size: 15px; display: inline-block; font-family: Arial, sans-serif; letter-spacing: 0.5px;">
+                  &#10005;&nbsp;&nbsp;退回修正
                 </a>
               </td>
             </tr>
