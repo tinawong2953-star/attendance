@@ -1392,28 +1392,37 @@
             details: details
         };
 
+        let submitSuccess = false;
         try {
+            // 使用 Google Apps Script 專用 no-cors 模式，不帶自訂 Header 防止瀏覽器 CORS 攔截
             await fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
-                body: JSON.stringify(payload),
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                mode: 'no-cors',
+                body: JSON.stringify(payload)
             });
+            submitSuccess = true;
         } catch (err) {
-            console.warn('Standard POST failed, executing fallback no-cors mode:', err);
+            console.error('Google Sheets submission error:', err);
+            // 備用通道：使用 Blob text/plain
             try {
+                const blob = new Blob([JSON.stringify(payload)], { type: 'text/plain' });
                 await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
-                    body: JSON.stringify(payload),
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                    body: blob
                 });
+                submitSuccess = true;
             } catch (fallbackErr) {
-                console.error('Submission failed:', fallbackErr);
+                alert('寫入 Google 試算表失敗，請確認網路連線！\n錯誤：' + fallbackErr.message);
             }
         } finally {
             submitBtn.disabled = false;
             submitBtn.style.opacity = '1';
             submitBtn.innerHTML = originalBtnHtml;
+        }
+
+        if (!submitSuccess) {
+            return;
         }
 
         // 更新 Modal 資訊並彈出提示
