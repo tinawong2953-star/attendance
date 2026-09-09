@@ -3,383 +3,1229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>出缺勤與請假/加班申請單</title>
+    <title>出缺勤 / 請假 / 加班 申請單系統</title>
     <style>
         :root {
-            --primary-color: #2c3e50;
-            --border-color: #333;
-            --light-bg: #f8f9fa;
-            --alert-bg: #fff3cd;
-            --alert-border: #ffeeba;
-            --alert-text: #856404;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #eef2ff;
+            --success: #10b981;
+            --success-light: #ecfdf5;
+            --warning: #f59e0b;
+            --warning-light: #fffbeb;
+            --danger: #ef4444;
+            --danger-light: #fef2f2;
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+            --slate-900: #0f172a;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 12px 28px -4px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            font-family: "Microsoft JhengHei", "微軟正黑體", Arial, sans-serif;
-            background-color: #eef2f5;
-            margin: 0;
-            padding: 20px;
-            color: #333;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            color: var(--slate-800);
+            min-height: 100vh;
+            padding: 30px 15px;
+            line-height: 1.5;
         }
 
-        .form-container {
-            max-width: 900px;
+        .container {
+            max-width: 1040px;
             margin: 0 auto;
-            background: #fff;
-            padding: 30px;
-            border: 2px solid var(--border-color);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        /* 標頭樣式 */
-        .form-header {
-            text-align: center;
-            border-bottom: 2px double var(--border-color);
-            padding-bottom: 15px;
-            margin-bottom: 20px;
+        /* 頂部導航/標頭 */
+        .app-header {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 24px 32px;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
         }
 
-        .form-header h1 {
-            margin: 0;
-            font-size: 24px;
-            letter-spacing: 2px;
-            color: var(--primary-color);
+        .header-title-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
 
-        .form-header .sub-title {
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary) 0%, #818cf8 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .header-title-group h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--slate-900);
+            letter-spacing: -0.5px;
+        }
+
+        .header-title-group p {
+            font-size: 13px;
+            color: var(--slate-500);
+            margin-top: 2px;
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: var(--slate-100);
+            color: var(--slate-600);
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid var(--slate-200);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 0 3px var(--success-light);
+        }
+
+        /* 考勤異常提醒卡片 */
+        .alert-card {
+            background: linear-gradient(to right, #fffbeb, #fef3c7);
+            border: 1px solid #fde68a;
+            border-radius: var(--radius-lg);
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .alert-icon {
+            width: 38px;
+            height: 38px;
+            background: #f59e0b;
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 8px rgba(245, 158, 11, 0.25);
+        }
+
+        .alert-content h4 {
             font-size: 14px;
-            color: #666;
-            margin-top: 5px;
+            font-weight: 700;
+            color: #92400e;
         }
 
-        /* 異常提醒警示框 */
-        .alert-box {
-            background-color: var(--alert-bg);
-            border: 1px solid var(--alert-border);
-            color: var(--alert-text);
-            padding: 12px 15px;
-            border-radius: 4px;
+        .alert-content p {
+            font-size: 13px;
+            color: #b45309;
+            margin-top: 2px;
+        }
+
+        .alert-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .btn-quick-fix {
+            background: #d97706;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-quick-fix:hover {
+            background: #b45309;
+            box-shadow: 0 2px 6px rgba(217, 119, 6, 0.3);
+        }
+
+        .btn-close-alert {
+            background: transparent;
+            border: 1px solid #fcd34d;
+            color: #92400e;
+            padding: 7px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-close-alert:hover {
+            background: #fde68a;
+        }
+
+        /* 主表單卡片 */
+        .form-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--slate-200);
+            margin-bottom: 24px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             margin-bottom: 20px;
-            font-size: 14px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--slate-100);
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--slate-800);
+        }
+
+        .section-title svg {
+            color: var(--primary);
+        }
+
+        /* 表單網格 */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 28px;
+        }
+
+        @media (max-width: 860px) {
+            .form-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 520px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--slate-600);
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
 
-        .alert-box strong {
-            color: #856404;
+        .label-hint {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--slate-400);
         }
 
-        /* 表格通用樣式 (請款單風格) */
-        table.form-table {
+        .locked-tag {
+            color: #d97706;
+            background: #fef3c7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .form-control {
+            width: 100%;
+            height: 42px;
+            padding: 8px 14px;
+            font-size: 14px;
+            color: var(--slate-800);
+            background: white;
+            border: 1px solid var(--slate-300);
+            border-radius: var(--radius-md);
+            transition: all 0.2s ease;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+        }
+
+        .form-control:disabled,
+        .form-control[readonly] {
+            background: var(--slate-100);
+            border-color: var(--slate-200);
+            color: var(--slate-600);
+            cursor: not-allowed;
+        }
+
+        .form-control-mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* 申請明細表格 */
+        .detail-table-container {
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background: white;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 16px;
+        }
+
+        .detail-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            text-align: left;
         }
 
-        table.form-table th, table.form-table td {
-            border: 1px solid var(--border-color);
-            padding: 8px 10px;
-            font-size: 14px;
+        .detail-table th {
+            background: var(--slate-50);
+            padding: 12px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--slate-600);
+            border-bottom: 1px solid var(--slate-200);
+            letter-spacing: 0.3px;
         }
 
-        table.form-table th {
-            background-color: var(--light-bg);
-            text-align: center;
-            font-weight: bold;
-            color: var(--primary-color);
+        .detail-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--slate-100);
+            vertical-align: middle;
         }
 
-        /* 輸入控制項樣式 */
-        input[type="text"], input[type="date"], input[type="time"], input[type="number"], select, textarea {
+        .detail-table tr:hover td {
+            background: #fafafa;
+        }
+
+        .table-input {
             width: 100%;
-            padding: 6px;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-            box-sizing: border-box;
+            height: 38px;
+            padding: 6px 10px;
+            border: 1px solid var(--slate-300);
+            border-radius: 8px;
             font-size: 13px;
-        }
-
-        input:focus, select:focus, textarea:focus {
-            border-color: #2980b9;
             outline: none;
-            background-color: #f0f8ff;
+            transition: border-color 0.2s;
+            background: white;
         }
 
-        /* 按鈕樣式 */
-        .btn {
+        .table-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+        }
+
+        .badge-category {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .hours-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             padding: 6px 12px;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: bold;
-        }
-
-        .btn-add {
-            background-color: #27ae60;
-            color: white;
-            margin-bottom: 10px;
-        }
-
-        .btn-add:hover { background-color: #219150; }
-
-        .btn-danger {
-            background-color: #e74c3c;
-            color: white;
-            padding: 4px 8px;
-        }
-
-        .btn-danger:hover { background-color: #c0392b; }
-
-        .btn-submit {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 10px 30px;
-            font-size: 16px;
-        }
-
-        .btn-submit:hover { background-color: #1a252f; }
-
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
-
-        /* 簽核欄位區 */
-        .approval-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            border: 1px solid var(--border-color);
-            margin-top: 20px;
-        }
-
-        .approval-box {
-            border-right: 1px solid var(--border-color);
+            background: var(--slate-100);
+            border: 1px solid var(--slate-200);
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--slate-800);
+            min-width: 60px;
             text-align: center;
         }
 
-        .approval-box:last-child {
-            border-right: none;
+        .hours-badge.has-value {
+            background: var(--primary-light);
+            border-color: #c7d2fe;
+            color: var(--primary);
         }
 
-        .approval-title {
-            background-color: var(--light-bg);
-            border-bottom: 1px solid var(--border-color);
-            padding: 6px;
-            font-weight: bold;
-            font-size: 13px;
-        }
-
-        .approval-space {
-            height: 60px;
+        .btn-delete-row {
+            width: 34px;
+            height: 34px;
+            border: none;
+            background: var(--slate-100);
+            color: var(--slate-400);
+            border-radius: 8px;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #aaa;
-            font-size: 12px;
+            transition: all 0.2s;
         }
 
+        .btn-delete-row:hover {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        /* 表格統計底欄 */
+        .table-summary-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 20px;
+            background: var(--slate-50);
+            border-top: 1px solid var(--slate-200);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .summary-total {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--slate-700);
+        }
+
+        .summary-number {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--primary);
+            background: white;
+            padding: 4px 14px;
+            border-radius: 8px;
+            border: 1px solid #c7d2fe;
+        }
+
+        .btn-add-row {
+            background: white;
+            border: 1px dashed var(--primary);
+            color: var(--primary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-add-row:hover {
+            background: var(--primary-light);
+            border-style: solid;
+        }
+
+        /* 附件上傳區 */
+        .upload-dropzone {
+            border: 2px dashed var(--slate-300);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--slate-50);
+            position: relative;
+        }
+
+        .upload-dropzone:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .upload-icon {
+            width: 44px;
+            height: 44px;
+            background: white;
+            color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px auto;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .upload-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--slate-700);
+        }
+
+        .upload-desc {
+            font-size: 12px;
+            color: var(--slate-400);
+            margin-top: 4px;
+        }
+
+        .file-chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .file-chip {
+            background: white;
+            border: 1px solid var(--slate-200);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* 審核流程步進器 */
+        .workflow-card {
+            margin-top: 28px;
+            padding: 20px;
+            background: var(--slate-50);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--slate-200);
+        }
+
+        .workflow-steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            position: relative;
+        }
+
+        @media (max-width: 680px) {
+            .workflow-steps {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .step-item {
+            background: white;
+            border: 1px solid var(--slate-200);
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+        }
+
+        .step-item.active {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+        }
+
+        .step-index {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--slate-100);
+            color: var(--slate-600);
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px auto;
+        }
+
+        .step-item.active .step-index {
+            background: var(--primary);
+            color: white;
+        }
+
+        .step-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--slate-800);
+        }
+
+        .step-status {
+            font-size: 11px;
+            color: var(--slate-400);
+            margin-top: 4px;
+        }
+
+        .step-item.active .step-status {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* 底部動作按鈕 */
+        .action-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 12px;
+            margin-top: 32px;
+            padding-top: 20px;
+            border-top: 1px solid var(--slate-100);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(79, 70, 229, 0.45);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--slate-700);
+            border: 1px solid var(--slate-300);
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--slate-50);
+            border-color: var(--slate-400);
+        }
+
+        /* 彈出對話框 (Modal) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.25s ease;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 480px;
+            padding: 32px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            transform: scale(0.95);
+            transition: all 0.25s ease;
+        }
+
+        .modal-overlay.open .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-icon-success {
+            width: 64px;
+            height: 64px;
+            background: var(--success-light);
+            color: var(--success);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px auto;
+        }
+
+        .modal-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--slate-900);
+        }
+
+        .modal-card p {
+            font-size: 14px;
+            color: var(--slate-500);
+            margin-top: 8px;
+            line-height: 1.6;
+        }
+
+        .modal-detail-box {
+            background: var(--slate-50);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 20px 0;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        .modal-detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .modal-detail-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .modal-btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .modal-btn-group button {
+            flex: 1;
+        }
+
+        /* 列印樣式優化 */
         @media print {
-            body { background: white; padding: 0; }
-            .form-container { box-shadow: none; border: 1px solid #000; }
-            .btn, .alert-box { display: none; }
+            body {
+                background: white;
+                padding: 0;
+            }
+            .container {
+                max-width: 100%;
+            }
+            .app-header, .alert-card, .btn-add-row, .btn-delete-row,
+            .upload-dropzone, .action-bar, .modal-overlay {
+                display: none !important;
+            }
+            .form-card {
+                box-shadow: none;
+                border: none;
+                padding: 0;
+            }
+            .print-header {
+                display: block !important;
+                text-align: center;
+                margin-bottom: 20px;
+                border-bottom: 2px solid #000;
+                padding-bottom: 10px;
+            }
+            .form-control, .table-input {
+                border: 1px solid #999 !important;
+                background: white !important;
+            }
+        }
+
+        .print-header {
+            display: none;
         }
     </style>
 </head>
 <body>
 
-<div class="form-container">
-    <!-- 單據頭部 -->
-    <div class="form-header">
-        <h1>出缺勤 / 請假 / 加班 申請單</h1>
-        <div class="sub-title">請款單式結構 - 考勤與異常補請填報</div>
-    </div>
+<div class="container">
 
-    <!-- 考勤異常提醒（模擬系統自動帶入） -->
-    <div class="alert-box" id="alertBox">
-        <div>
-            <strong>⚠️ 考勤異常提醒：</strong> 系統偵測到您於 <span style="text-decoration: underline;">2026/09/08</span> 有刷卡簽退紀錄但無上班打卡，請於此單據完成「補打卡」或「請假說明」。
+    <!-- 頂部系統列 -->
+    <header class="app-header">
+        <div class="header-title-group">
+            <div class="logo-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                    <path d="m9 16 2 2 4-4"></path>
+                </svg>
+            </div>
+            <div>
+                <h1>出缺勤 / 請假 / 加班 申請單</h1>
+                <p>線上考勤智慧填報 · 時數自動核算 · 電子簽核流程</p>
+            </div>
         </div>
-        <button class="btn btn-danger" onclick="document.getElementById('alertBox').style.display='none'">關閉提醒</button>
+        <div class="header-badge">
+            <span class="status-dot"></span>
+            系統連線正常 · 填表模式
+        </div>
+    </header>
+
+    <!-- 列印專用標頭 -->
+    <div class="print-header">
+        <h2 style="font-size: 22px; font-weight: bold;">禾騰智慧考勤 — 出缺勤/請假/加班申請單</h2>
+        <p style="font-size: 12px; color: #555; margin-top: 4px;">列印時間：<span id="printDate"></span></p>
     </div>
 
-    <form id="attendanceForm" onsubmit="handleSubmit(event)">
-        <!-- 表頭 basic info (基本資訊表) -->
-        <table class="form-table">
-            <tr>
-                <th width="15%">填單日期</th>
-                <td width="35%"><input type="date" id="applyDate" readonly style="background:#eee; cursor: not-allowed; pointer-events: none;" tabindex="-1" required></td>
-                <th width="15%">單據編號</th>
-                <td width="35%"><input type="text" id="formNo" value="ATT-20260909-001" readonly style="background:#eee;"></td>
-            </tr>
-            <tr>
-                <th>申請人</th>
-                <td><input type="text" placeholder="請輸入姓名" required></td>
-                <th>所屬部門</th>
-                <td>
-                    <select required>
-                        <option value="">-- 請選擇部門 --</option>
-                        <option value="行政管理部">行政管理部</option>
-                        <option value="財務會計部">財務會計部</option>
-                        <option value="工程技術部">工程技術部</option>
-                        <option value="專案規劃部">专案規劃部</option>
+    <!-- 考勤異常提醒卡片 (可一鍵帶入) -->
+    <div class="alert-card" id="alertCard">
+        <div class="alert-left">
+            <div class="alert-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+            </div>
+            <div class="alert-content">
+                <h4>考勤異常提醒（系統自動比對）</h4>
+                <p>偵測到您於 <strong>2026/09/08 (二)</strong> 僅有簽退紀錄，缺少上班刷卡資料。請於此單據補請打卡或事由說明。</p>
+            </div>
+        </div>
+        <div class="alert-actions">
+            <button type="button" class="btn-quick-fix" onclick="autoFillException()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+                一鍵帶入補打卡
+            </button>
+            <button type="button" class="btn-close-alert" onclick="dismissAlert()">關閉提醒</button>
+        </div>
+    </div>
+
+    <!-- 主表單區域 -->
+    <form id="attendanceAppForm" onsubmit="handleFormSubmit(event)">
+        <div class="form-card">
+            
+            <!-- 區塊 1: 基本資料 -->
+            <div class="section-header">
+                <div class="section-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    基本資訊
+                </div>
+                <span class="label-hint">* 所有標記項目為必填欄位</span>
+            </div>
+
+            <div class="form-grid">
+                <!-- 填單日期 (當日鎖定) -->
+                <div class="form-field">
+                    <label class="form-label" for="applyDate">
+                        填單日期
+                        <span class="locked-tag">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                            鎖定當日
+                        </span>
+                    </label>
+                    <input type="date" id="applyDate" class="form-control" readonly tabindex="-1" style="cursor: not-allowed; pointer-events: none;" required>
+                </div>
+
+                <!-- 單據編號 (自動編碼) -->
+                <div class="form-field">
+                    <label class="form-label" for="formNo">
+                        單據編號
+                        <span class="label-hint">系統自動取號</span>
+                    </label>
+                    <input type="text" id="formNo" class="form-control form-control-mono" readonly tabindex="-1" required>
+                </div>
+
+                <!-- 申請人 -->
+                <div class="form-field">
+                    <label class="form-label" for="applicantName">
+                        申請人姓名 <span style="color: var(--danger);">*</span>
+                    </label>
+                    <input type="text" id="applicantName" class="form-control" placeholder="請輸入您的真實姓名" required>
+                </div>
+
+                <!-- 所屬部門 -->
+                <div class="form-field">
+                    <label class="form-label" for="departmentSelect">
+                        所屬部門 <span style="color: var(--danger);">*</span>
+                    </label>
+                    <select id="departmentSelect" class="form-control" required>
+                        <option value="">-- 請選擇所屬部門 --</option>
+                        <option value="農水部">農水部</option>
+                        <option value="流域部">流域部</option>
+                        <option value="景觀部">景觀部</option>
+                        <option value="技研處">技研處</option>
+                        <option value="行政處">行政處</option>
                     </select>
-                </td>
-            </tr>
-        </table>
-
-        <!-- 申請明細表 (如同請款明細) -->
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="margin: 10px 0; font-size: 16px; color: var(--primary-color);">丨 申請項目明細</h3>
-            <button type="button" class="btn btn-add" onclick="addRow()">+ 新增明細欄位</button>
-        </div>
-
-        <table class="form-table" id="detailTable">
-            <thead>
-                <tr>
-                    <th width="14%">申請類別</th>
-                    <th width="14%">假別/項目</th>
-                    <th width="18%">開始時間</th>
-                    <th width="18%">結束時間</th>
-                    <th width="10%">時數(HR)</th>
-                    <th width="20%">事由 / 專案備註</th>
-                    <th width="6%">操作</th>
-                </tr>
-            </thead>
-            <tbody id="detailBody">
-                <!-- 動態新增列 -->
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="4" class="text-right" style="font-weight: bold; background: var(--light-bg);">合計時數：</td>
-                    <td class="text-center" style="font-weight: bold; color: #c0392b;" id="totalHours">0</td>
-                    <td colspan="2"></td>
-                </tr>
-            </tfoot>
-        </table>
-
-        <!-- 備註與說明 -->
-        <table class="form-table">
-            <tr>
-                <th width="15%">檢附證明/備註</th>
-                <td>
-                    <input type="file" multiple style="margin-bottom: 5px;"><br>
-                    <small style="color: #666;">* 如請公假、病假、喪假等，請上傳相關證明文件電子檔。</small>
-                </td>
-            </tr>
-        </table>
-
-        <!-- 底部簽核欄 (請款單標準樣式) -->
-        <div class="approval-grid">
-            <div class="approval-box">
-                <div class="approval-title">申請人</div>
-                <div class="approval-space">（簽章填表）</div>
+                </div>
             </div>
-            <div class="approval-box">
-                <div class="approval-title">部門主管</div>
-                <div class="approval-space">（待審核）</div>
-            </div>
-            <div class="approval-box">
-                <div class="approval-title">考勤HR覆核</div>
-                <div class="approval-space">（待核對）</div>
-            </div>
-            <div class="approval-box">
-                <div class="approval-title">管理階層核決</div>
-                <div class="approval-space">（待批示）</div>
-            </div>
-        </div>
 
-        <!-- 送出按鈕區 -->
-        <div class="text-center" style="margin-top: 25px;">
-            <button type="submit" class="btn btn-submit">送出申請單</button>
-            <button type="button" class="btn" style="background: #7f8c8d; color: white;" onclick="window.print()">列印單據</button>
+            <!-- 區塊 2: 申請項目明細 -->
+            <div class="section-header">
+                <div class="section-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    申請項目明細清單
+                </div>
+                <button type="button" class="btn-add-row" onclick="addNewDetailRow()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    新增一筆明細
+                </button>
+            </div>
+
+            <!-- 明細表格 -->
+            <div class="detail-table-container">
+                <table class="detail-table" id="detailsTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 14%;">申請類別</th>
+                            <th style="width: 16%;">假別 / 細項</th>
+                            <th style="width: 20%;">開始時間</th>
+                            <th style="width: 20%;">結束時間</th>
+                            <th style="width: 11%; text-align: center;">時數 (HR)</th>
+                            <th style="width: 14%;">事由 / 備註</th>
+                            <th style="width: 5%; text-align: center;">刪除</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailTableBody">
+                        <!-- 動態生成列 -->
+                    </tbody>
+                </table>
+                <div class="table-summary-bar">
+                    <div class="label-hint">
+                        💡 提示：選擇時間後系統將自動扣除時差計算總時數（跨日依標準時長核計）。
+                    </div>
+                    <div class="summary-total">
+                        <span>申請合計時數：</span>
+                        <span class="summary-number" id="grandTotalHours">0.0</span>
+                        <span>小時</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 區塊 3: 證明文件與附件上傳 -->
+            <div class="section-header" style="margin-top: 28px;">
+                <div class="section-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                    </svg>
+                    檢附證明文件 / 附件上傳
+                </div>
+                <span class="label-hint">（選填，公假/病假/婚喪假等請檢附證明）</span>
+            </div>
+
+            <div class="upload-dropzone" onclick="document.getElementById('fileAttachmentInput').click()">
+                <div class="upload-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                </div>
+                <div class="upload-title">點擊選擇檔案，或將證明文件拖曳至此</div>
+                <div class="upload-desc">支援 PDF, JPG, PNG 格式電子檔，單檔上限 10MB</div>
+                <input type="file" id="fileAttachmentInput" multiple style="display: none;" onchange="handleFileSelected(this)">
+            </div>
+            <div class="file-chips-container" id="fileChipsContainer"></div>
+
+            <!-- 區塊 4: 簽核流程步進進度 -->
+            <div class="workflow-card">
+                <div style="font-size: 13px; font-weight: 700; color: var(--slate-700); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 11 12 14 22 4"></polyline>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>
+                    標準簽核審查流程
+                </div>
+                <div class="workflow-steps">
+                    <div class="step-item active">
+                        <div class="step-index">1</div>
+                        <div class="step-name">申請人填表</div>
+                        <div class="step-status">目前步驟（填寫中）</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-index">2</div>
+                        <div class="step-name">部門主管</div>
+                        <div class="step-status">送出後待審核</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-index">3</div>
+                        <div class="step-name">考勤 HR 覆核</div>
+                        <div class="step-status">待差勤核算</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-index">4</div>
+                        <div class="step-name">管理階層核決</div>
+                        <div class="step-status">最終核准</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部按鈕區 -->
+            <div class="action-bar">
+                <button type="button" class="btn-secondary" onclick="window.print()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                        <rect x="6" y="14" width="12" height="8"></rect>
+                    </svg>
+                    列印 / 存為 PDF
+                </button>
+                <button type="submit" class="btn-primary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                    送出考勤申請單
+                </button>
+            </div>
+
         </div>
     </form>
+
+</div>
+
+<!-- 提交成功 Modal 彈跳視窗 -->
+<div class="modal-overlay" id="successModal">
+    <div class="modal-card">
+        <div class="modal-icon-success">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+        </div>
+        <h3>申請單已成功送出！</h3>
+        <p>系統已將電子申請單派送至所屬主管之審核信箱，您可於個人出勤紀錄隨時追蹤進度。</p>
+        
+        <div class="modal-detail-box">
+            <div class="modal-detail-row">
+                <span style="color: var(--slate-500);">單據編號：</span>
+                <strong id="modalFormNo" style="font-family: monospace;">ATT-20260909-001</strong>
+            </div>
+            <div class="modal-detail-row">
+                <span style="color: var(--slate-500);">填單日期：</span>
+                <span id="modalDate">2026-09-09</span>
+            </div>
+            <div class="modal-detail-row">
+                <span style="color: var(--slate-500);">申請人 / 部門：</span>
+                <span id="modalApplicant">王小明 (工程技術部)</span>
+            </div>
+            <div class="modal-detail-row">
+                <span style="color: var(--slate-500);">申請總時數：</span>
+                <strong id="modalTotalHours" style="color: var(--primary);">8.0 小時</strong>
+            </div>
+        </div>
+
+        <div class="modal-btn-group">
+            <button type="button" class="btn-secondary" onclick="closeModal()">關閉視窗</button>
+            <button type="button" class="btn-primary" onclick="window.print(); closeModal();">列印此單據</button>
+        </div>
+    </div>
 </div>
 
 <script>
-    // 預設填單日期為當日且不可異動
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    const applyDateInput = document.getElementById('applyDate');
-    if (applyDateInput) {
-        applyDateInput.value = `${yyyy}-${mm}-${dd}`;
-    }
-    const formNoInput = document.getElementById('formNo');
-    if (formNoInput) {
-        formNoInput.value = `ATT-${yyyy}${mm}${dd}-001`;
-    }
-
-    // 項目與假別連動選單
-    const itemOptions = {
-        "請假": ["特別休假", "事假", "普通傷病假", "公假", "婚假", "喪假", "生理假", "補休"],
-        "加班": ["工作日加班", "休息日加班", "例假日加班"],
-        "缺勤/補打卡": ["上班補打卡", "下班補打卡", "外出公差補打卡"]
+    // 假別連動選單資料庫
+    const subCategories = {
+        "請假": ["特別休假 (特休)", "事假", "普通傷病假", "公假", "婚假", "喪假", "生理假", "產假 / 陪產檢假", "補休"],
+        "加班": ["工作日平時加班", "休息日加班", "國定/例假日加班"],
+        "缺勤/補打卡": ["上班忘刷補打卡", "下班忘刷補打卡", "外出公差補打卡", "卡片遺失/異常補登"]
     };
 
-    // 自動新增第一筆空明細
-    window.onload = function() {
-        addRow();
-    };
+    // 初始化頁面
+    document.addEventListener('DOMContentLoaded', () => {
+        initDatesAndFormNo();
+        addNewDetailRow(); // 預設加入第一筆
+    });
 
-    // 新增列
-    function addRow() {
-        const tbody = document.getElementById('detailBody');
-        const row = document.createElement('tr');
+    // 設定日期與自動取號
+    function initDatesAndFormNo() {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const dateStr = `${yyyy}-${mm}-${dd}`;
 
-        row.innerHTML = `
+        // 填單日期鎖定為當日
+        const dateElem = document.getElementById('applyDate');
+        if (dateElem) {
+            dateElem.value = dateStr;
+        }
+
+        // 單據編號
+        const noElem = document.getElementById('formNo');
+        if (noElem) {
+            noElem.value = `ATT-${yyyy}${mm}${dd}-001`;
+        }
+
+        // 列印用日期
+        const printDateElem = document.getElementById('printDate');
+        if (printDateElem) {
+            printDateElem.textContent = `${dateStr} ${today.toLocaleTimeString()}`;
+        }
+    }
+
+    // 新增明細列
+    function addNewDetailRow(defaultCategory = "請假", defaultSub = "", defaultStart = "", defaultEnd = "", defaultReason = "") {
+        const tbody = document.getElementById('detailTableBody');
+        const tr = document.createElement('tr');
+
+        tr.innerHTML = `
             <td>
-                <select onchange="updateSubOptions(this)" required>
-                    <option value="請假">請假</option>
-                    <option value="加班">加班</option>
-                    <option value="缺勤/補打卡">缺勤/補打卡</option>
+                <select class="table-input category-select" onchange="handleCategoryChange(this)" required>
+                    <option value="請假" ${defaultCategory === '請假' ? 'selected' : ''}>🌴 請假</option>
+                    <option value="加班" ${defaultCategory === '加班' ? 'selected' : ''}>⚡ 加班</option>
+                    <option value="缺勤/補打卡" ${defaultCategory === '缺勤/補打卡' ? 'selected' : ''}>⏰ 缺勤/補打卡</option>
                 </select>
             </td>
             <td>
-                <select class="sub-type" required>
-                    <!-- 自動動態帶入 -->
+                <select class="table-input sub-select" required>
+                    <!-- 自動連動 -->
                 </select>
             </td>
-            <td><input type="datetime-local" class="start-time" onchange="calculateHours(this)" required></td>
-            <td><input type="datetime-local" class="end-time" onchange="calculateHours(this)" required></td>
-            <td><input type="number" class="row-hours" value="0" min="0" step="0.5" onchange="calculateTotal()" readonly style="background:#f9f9f9; text-align:center;"></td>
-            <td><input type="text" placeholder="填寫說明或專案名稱" required></td>
-            <td class="text-center"><button type="button" class="btn btn-danger" onclick="removeRow(this)">X</button></td>
+            <td>
+                <input type="datetime-local" class="table-input start-time" value="${defaultStart}" onchange="recalculateHours(this)" required>
+            </td>
+            <td>
+                <input type="datetime-local" class="table-input end-time" value="${defaultEnd}" onchange="recalculateHours(this)" required>
+            </td>
+            <td style="text-align: center;">
+                <div class="hours-badge row-hours">0.0</div>
+            </td>
+            <td>
+                <input type="text" class="table-input reason-input" value="${defaultReason}" placeholder="請簡述事由或專案" required>
+            </td>
+            <td style="text-align: center;">
+                <button type="button" class="btn-delete-row" title="刪除此列" onclick="removeDetailRow(this)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+            </td>
         `;
 
-        tbody.appendChild(row);
-        updateSubOptions(row.querySelector('select'));
+        tbody.appendChild(tr);
+
+        // 刷新對應的子選單
+        const catSelect = tr.querySelector('.category-select');
+        updateSubOptions(catSelect, defaultSub);
+
+        if (defaultStart && defaultEnd) {
+            recalculateHours(tr.querySelector('.start-time'));
+        }
     }
 
-    // 移除列
-    function removeRow(btn) {
-        const row = btn.closest('tr');
-        row.remove();
-        calculateTotal();
+    // 類別變更時連動細項
+    function handleCategoryChange(selectElem) {
+        updateSubOptions(selectElem);
+        recalculateHours(selectElem);
     }
 
-    // 連動選單更新
-    function updateSubOptions(selectElem) {
-        const category = selectElem.value;
-        const row = selectElem.closest('tr');
-        const subSelect = row.querySelector('.sub-type');
-        
+    // 依類別動態更新細項下拉清單
+    function updateSubOptions(categorySelect, preSelectVal = "") {
+        const row = categorySelect.closest('tr');
+        const subSelect = row.querySelector('.sub-select');
+        const cat = categorySelect.value;
+        const options = subCategories[cat] || [];
+
         subSelect.innerHTML = '';
-        itemOptions[category].forEach(item => {
+        options.forEach(item => {
             const opt = document.createElement('option');
             opt.value = item;
             opt.textContent = item;
+            if (preSelectVal && item.includes(preSelectVal)) {
+                opt.selected = true;
+            }
             subSelect.appendChild(opt);
         });
     }
 
-    // 自動計算時數 (預設簡單扣除時間差，可依公司班表調整邏輯)
-    function calculateHours(inputElem) {
+    // 刪除列
+    function removeDetailRow(btn) {
+        const tbody = document.getElementById('detailTableBody');
+        if (tbody.children.length <= 1) {
+            alert('至少需保留一筆申請項目！');
+            return;
+        }
+        btn.closest('tr').remove();
+        updateGrandTotal();
+    }
+
+    // 自動計算時數
+    function recalculateHours(inputElem) {
         const row = inputElem.closest('tr');
         const startVal = row.querySelector('.start-time').value;
         const endVal = row.querySelector('.end-time').value;
-        const hoursInput = row.querySelector('.row-hours');
+        const hoursBadge = row.querySelector('.row-hours');
 
         if (startVal && endVal) {
             const start = new Date(startVal);
@@ -388,29 +1234,106 @@
 
             if (diffMs > 0) {
                 let hours = diffMs / (1000 * 60 * 60);
-                hoursInput.value = hours.toFixed(1);
+                // 依半小時(0.5)或一小數點顯示
+                const roundedHours = (Math.round(hours * 2) / 2).toFixed(1);
+                hoursBadge.textContent = roundedHours;
+                hoursBadge.classList.add('has-value');
             } else {
                 alert('結束時間必須大於開始時間！');
-                hoursInput.value = 0;
+                row.querySelector('.end-time').value = '';
+                hoursBadge.textContent = '0.0';
+                hoursBadge.classList.remove('has-value');
             }
+        } else {
+            hoursBadge.textContent = '0.0';
+            hoursBadge.classList.remove('has-value');
         }
-        calculateTotal();
+
+        updateGrandTotal();
     }
 
-    // 計算總時數
-    function calculateTotal() {
+    // 更新總時數
+    function updateGrandTotal() {
         let total = 0;
-        const hoursInputs = document.querySelectorAll('.row-hours');
-        hoursInputs.forEach(input => {
-            total += parseFloat(input.value) || 0;
+        document.querySelectorAll('.row-hours').forEach(elem => {
+            total += parseFloat(elem.textContent) || 0;
         });
-        document.getElementById('totalHours').textContent = total.toFixed(1);
+        document.getElementById('grandTotalHours').textContent = total.toFixed(1);
     }
 
-    // 表單送出處置
-    function handleSubmit(e) {
+    // 一鍵帶入考勤異常
+    function autoFillException() {
+        // 先將第一筆尚未填寫的列帶入，或者直接新增一筆
+        const tbody = document.getElementById('detailTableBody');
+        const firstRow = tbody.querySelector('tr');
+        const isFirstRowEmpty = firstRow && !firstRow.querySelector('.start-time').value;
+
+        const defaultStart = "2026-09-08T09:00";
+        const defaultEnd = "2026-09-08T18:00";
+        const defaultReason = "2026/09/08 上班忘刷卡補登，刷卡簽退紀錄正常";
+
+        if (isFirstRowEmpty) {
+            const catSelect = firstRow.querySelector('.category-select');
+            catSelect.value = "缺勤/補打卡";
+            updateSubOptions(catSelect, "上班忘刷補打卡");
+            firstRow.querySelector('.start-time').value = defaultStart;
+            firstRow.querySelector('.end-time').value = defaultEnd;
+            firstRow.querySelector('.reason-input').value = defaultReason;
+            recalculateHours(firstRow.querySelector('.start-time'));
+        } else {
+            addNewDetailRow("缺勤/補打卡", "上班忘刷補打卡", defaultStart, defaultEnd, defaultReason);
+        }
+
+        // 關閉提醒
+        dismissAlert();
+    }
+
+    function dismissAlert() {
+        const card = document.getElementById('alertCard');
+        if (card) {
+            card.style.display = 'none';
+        }
+    }
+
+    // 檔案選取預覽處理
+    function handleFileSelected(input) {
+        const container = document.getElementById('fileChipsContainer');
+        container.innerHTML = '';
+        if (input.files) {
+            Array.from(input.files).forEach(file => {
+                const chip = document.createElement('div');
+                chip.className = 'file-chip';
+                const sizeKb = (file.size / 1024).toFixed(1);
+                chip.innerHTML = `
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                    <strong>${file.name}</strong> (${sizeKb} KB)
+                `;
+                container.appendChild(chip);
+            });
+        }
+    }
+
+    // 表單送出處理
+    function handleFormSubmit(e) {
         e.preventDefault();
-        alert('申請單已成功送出！將傳送至主管審核。');
+
+        const formNo = document.getElementById('formNo').value;
+        const applyDate = document.getElementById('applyDate').value;
+        const applicant = document.getElementById('applicantName').value;
+        const dept = document.getElementById('departmentSelect').value;
+        const totalHours = document.getElementById('grandTotalHours').textContent;
+
+        document.getElementById('modalFormNo').textContent = formNo;
+        document.getElementById('modalDate').textContent = applyDate;
+        document.getElementById('modalApplicant').textContent = `${applicant} (${dept})`;
+        document.getElementById('modalTotalHours').textContent = `${totalHours} 小時`;
+
+        // 開啟 Modal
+        document.getElementById('successModal').classList.add('open');
+    }
+
+    function closeModal() {
+        document.getElementById('successModal').classList.remove('open');
     }
 </script>
 
