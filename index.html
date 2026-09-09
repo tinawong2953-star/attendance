@@ -1099,12 +1099,13 @@
                 <table class="detail-table" id="detailsTable">
                     <thead>
                         <tr>
-                            <th style="width: 14%;">申請類別</th>
-                            <th style="width: 16%;">假別 / 細項</th>
-                            <th style="width: 20%;">開始時間</th>
-                            <th style="width: 20%;">結束時間</th>
-                            <th style="width: 11%; text-align: center;">時數 (HR)</th>
-                            <th style="width: 14%;">事由 / 備註</th>
+                            <th style="width: 13%;">申請類別</th>
+                            <th style="width: 14%;">假別 / 細項</th>
+                            <th style="width: 19%;">開始時間</th>
+                            <th style="width: 19%;">結束時間</th>
+                            <th style="width: 10%; text-align: center;">天數</th>
+                            <th style="width: 10%; text-align: center;">時數 (HR)</th>
+                            <th style="width: 10%;">事由 / 備註</th>
                             <th style="width: 5%; text-align: center;">刪除</th>
                         </tr>
                     </thead>
@@ -1114,7 +1115,7 @@
                 </table>
                 <div class="table-summary-bar">
                     <div class="label-hint">
-                        💡 提示：選擇時間後系統將自動扣除時差計算總時數（跨日依標準時長核計）。
+                        💡 上班時間 08:30–18:30（午休 12:00–13:30，扣 1.5 hr）。跨日整天請假系統自動計算工作日 × 8 hr，最小單位 0.5 hr，單日上限 8 hr。
                     </div>
                     <div class="summary-total">
                         <span>申請合計時數：</span>
@@ -1329,17 +1330,35 @@
         }
     }
 
-    // 新增明細列
+    // 新增明細列（請假模式：date range；加班/補打卡模式：datetime-local）
     function addNewDetailRow(defaultCategory = "請假", defaultSub = "", defaultStart = "", defaultEnd = "", defaultReason = "") {
         const tbody = document.getElementById('detailTableBody');
         const tr = document.createElement('tr');
+        const isLeave = defaultCategory === "請假";
 
-        tr.innerHTML = `
+        tr.innerHTML = buildDetailRowHTML(defaultCategory, defaultSub, defaultStart, defaultEnd, defaultReason);
+        tbody.appendChild(tr);
+
+        const catSelect = tr.querySelector('.category-select');
+        updateSubOptions(catSelect, defaultSub);
+
+        if (defaultStart && defaultEnd) {
+            recalculateHours(tr.querySelector('.start-time'));
+        }
+    }
+
+    // 依類別動態建立欄位 HTML（請假用 date-range，加班/補打卡用 datetime-local）
+    function buildDetailRowHTML(cat = "請假", sub = "", start = "", end = "", reason = "") {
+        const isLeave = cat === "請假";
+        const startType = isLeave ? "date" : "datetime-local";
+        const endType   = isLeave ? "date" : "datetime-local";
+
+        return `
             <td>
                 <select class="table-input category-select" onchange="handleCategoryChange(this)" required>
-                    <option value="請假" ${defaultCategory === '請假' ? 'selected' : ''}>🌴 請假</option>
-                    <option value="加班" ${defaultCategory === '加班' ? 'selected' : ''}>⚡ 加班</option>
-                    <option value="缺勤/補打卡" ${defaultCategory === '缺勤/補打卡' ? 'selected' : ''}>⏰ 缺勤/補打卡</option>
+                    <option value="請假" ${cat === '請假' ? 'selected' : ''}>🌴 請假</option>
+                    <option value="加班" ${cat === '加班' ? 'selected' : ''}>⚡ 加班</option>
+                    <option value="缺勤/補打卡" ${cat === '缺勤/補打卡' ? 'selected' : ''}>⏰ 缺勤/補打卡</option>
                 </select>
             </td>
             <td>
@@ -1348,16 +1367,37 @@
                 </select>
             </td>
             <td>
-                <input type="datetime-local" class="table-input start-time" value="${defaultStart}" onchange="recalculateHours(this)" required>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <input type="${startType}" class="table-input start-time" value="${start}" onchange="recalculateHours(this)" required>
+                    ${isLeave ? `
+                    <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+                        <label style="font-size:11px; color:#64748b; display:inline-flex; align-items:center; gap:3px; cursor:pointer;">
+                            <input type="checkbox" class="partial-toggle" onchange="togglePartialTime(this)"> 部分工時
+                        </label>
+                    </div>
+                    <div class="partial-time-wrap" style="display:none; margin-top:2px;">
+                        <input type="time" class="table-input start-time-partial" value="08:30" step="1800" onchange="recalculateHours(this)" style="padding:4px 8px; font-size:12px;">
+                    </div>` : ''}
+                </div>
             </td>
             <td>
-                <input type="datetime-local" class="table-input end-time" value="${defaultEnd}" onchange="recalculateHours(this)" required>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <input type="${endType}" class="table-input end-time" value="${end}" onchange="recalculateHours(this)" required>
+                    ${isLeave ? `
+                    <div style="font-size:11px; color:#94a3b8; height:18px;"></div>
+                    <div class="partial-time-wrap" style="display:none; margin-top:2px;">
+                        <input type="time" class="table-input end-time-partial" value="18:30" step="1800" onchange="recalculateHours(this)" style="padding:4px 8px; font-size:12px;">
+                    </div>` : ''}
+                </div>
+            </td>
+            <td style="text-align: center;">
+                <div class="hours-badge row-days" style="font-size:12px; margin-bottom:4px; background:#f1f5f9; border:1px solid #e2e8f0; color:#64748b; min-width:70px;">—</div>
             </td>
             <td style="text-align: center;">
                 <div class="hours-badge row-hours">0.0</div>
             </td>
             <td>
-                <input type="text" class="table-input reason-input" value="${defaultReason}" placeholder="請簡述事由或專案" required>
+                <input type="text" class="table-input reason-input" value="${reason}" placeholder="請簡述事由或專案" required>
             </td>
             <td style="text-align: center;">
                 <button type="button" class="btn-delete-row" title="刪除此列" onclick="removeDetailRow(this)">
@@ -1368,22 +1408,192 @@
                 </button>
             </td>
         `;
-
-        tbody.appendChild(tr);
-
-        // 刷新對應的子選單
-        const catSelect = tr.querySelector('.category-select');
-        updateSubOptions(catSelect, defaultSub);
-
-        if (defaultStart && defaultEnd) {
-            recalculateHours(tr.querySelector('.start-time'));
-        }
     }
 
-    // 類別變更時連動細項
+    // 切換部分工時時段輸入框顯示
+    function togglePartialTime(checkbox) {
+        const row = checkbox.closest('tr');
+        const wraps = row.querySelectorAll('.partial-time-wrap');
+        wraps.forEach(wrap => {
+            wrap.style.display = checkbox.checked ? 'block' : 'none';
+        });
+        recalculateHours(checkbox);
+    }
+
+    // ===== 核心工時計算邏輯（依公司班表）=====
+    // 班表規定：上班 08:30–18:30，午休 12:00–13:30（扣除 1.5hr）
+    // 每個工作日有效請假時數 = 8.0 hr（最大），最小單位 0.5 hr
+    // 整天請假（date 型別）：每個工作日計 8.0 hr
+    // 部分請假（指定時段）：依開始/結束時間計算，扣除午休，最大 8 hr，以 0.5 hr 為最小基數
+
+    const WORK_START_H = 8, WORK_START_M = 30;   // 08:30
+    const WORK_END_H   = 18, WORK_END_M   = 30;  // 18:30
+    const BREAK_START_H = 12, BREAK_START_M = 0;  // 12:00
+    const BREAK_END_H  = 13, BREAK_END_M  = 30;  // 13:30
+    const DAILY_MAX_HOURS = 8.0;
+    const MIN_UNIT = 0.5;
+
+    // 計算兩個 time 字串（"HH:MM"）之間扣除午休後的實際工時（分鐘）
+    function calcWorkMinutesBetween(startHHMM, endHHMM) {
+        const [sh, sm] = startHHMM.split(':').map(Number);
+        const [eh, em] = endHHMM.split(':').map(Number);
+        const startMins = sh * 60 + sm;
+        const endMins   = eh * 60 + em;
+
+        if (endMins <= startMins) return 0;
+
+        const workStart = WORK_START_H * 60 + WORK_START_M; // 510
+        const workEnd   = WORK_END_H   * 60 + WORK_END_M;   // 1110
+        const breakStart = BREAK_START_H * 60 + BREAK_START_M; // 720
+        const breakEnd   = BREAK_END_H   * 60 + BREAK_END_M;   // 810
+
+        const s = Math.max(startMins, workStart);
+        const e = Math.min(endMins,   workEnd);
+        if (e <= s) return 0;
+
+        let mins = e - s;
+
+        // 扣除午休與該時段的交集
+        const overlapStart = Math.max(s, breakStart);
+        const overlapEnd   = Math.min(e, breakEnd);
+        if (overlapEnd > overlapStart) {
+            mins -= (overlapEnd - overlapStart);
+        }
+
+        return Math.max(mins, 0);
+    }
+
+    // 判斷是否為工作日（排除週六、週日）
+    function isWorkday(dateObj) {
+        const day = dateObj.getDay();
+        return day !== 0 && day !== 6; // 0=Sunday, 6=Saturday
+    }
+
+    // 計算兩個 Date（只看日期）之間的工作日數
+    function countWorkdays(startDate, endDate) {
+        let count = 0;
+        const d = new Date(startDate);
+        d.setHours(0, 0, 0, 0);
+        const end = new Date(endDate);
+        end.setHours(0, 0, 0, 0);
+        while (d <= end) {
+            if (isWorkday(d)) count++;
+            d.setDate(d.getDate() + 1);
+        }
+        return count;
+    }
+
+    // 四捨五入至最近 0.5 hr，最大不超過 dailyMax
+    function roundToHalfHour(hours, dailyMax = DAILY_MAX_HOURS) {
+        const rounded = Math.round(hours * 2) / 2;
+        return Math.min(parseFloat(rounded.toFixed(1)), dailyMax);
+    }
+
+    // 主計算函式
+    function recalculateHours(inputElem) {
+        const row = inputElem.closest('tr');
+        const catSelect = row.querySelector('.category-select');
+        const cat = catSelect ? catSelect.value : '';
+        const hoursBadge = row.querySelector('.row-hours');
+        const daysBadge  = row.querySelector('.row-days');
+
+        if (cat === '請假') {
+            // 請假：date 範圍模式
+            const startDateVal = row.querySelector('.start-time').value; // YYYY-MM-DD
+            const endDateVal   = row.querySelector('.end-time').value;   // YYYY-MM-DD
+            const startTimeVal = (row.querySelector('.start-time-partial')?.value || '').trim();
+            const endTimeVal   = (row.querySelector('.end-time-partial')?.value || '').trim();
+
+            if (!startDateVal || !endDateVal) {
+                hoursBadge.textContent = '0.0';
+                hoursBadge.classList.remove('has-value');
+                if (daysBadge) daysBadge.textContent = '—';
+                updateGrandTotal();
+                return;
+            }
+
+            const startDate = new Date(startDateVal + 'T00:00:00');
+            const endDate   = new Date(endDateVal   + 'T00:00:00');
+
+            if (endDate < startDate) {
+                alert('結束日期不可早於開始日期！');
+                row.querySelector('.end-time').value = '';
+                hoursBadge.textContent = '0.0';
+                hoursBadge.classList.remove('has-value');
+                if (daysBadge) daysBadge.textContent = '—';
+                updateGrandTotal();
+                return;
+            }
+
+            const workdays = countWorkdays(startDate, endDate);
+
+            let totalHours = 0;
+
+            if (workdays === 1 && startTimeVal && endTimeVal) {
+                // 單日部分請假：精確計算時段並扣午休
+                const mins = calcWorkMinutesBetween(startTimeVal, endTimeVal);
+                const raw = mins / 60;
+                totalHours = roundToHalfHour(raw, DAILY_MAX_HOURS);
+
+                // 偵測是否為整天
+                const fullDayMins = calcWorkMinutesBetween('08:30', '18:30');
+                const isFullDay = Math.abs(raw - (fullDayMins / 60)) < 0.01;
+                if (daysBadge) daysBadge.textContent = isFullDay ? '整天 (1天)' : '半天/部分';
+
+            } else {
+                // 整天請假（未填部分時段，或跨多日）每工作日 × 8 hr
+                totalHours = workdays * DAILY_MAX_HOURS;
+                if (daysBadge) {
+                    daysBadge.textContent = workdays === 1 ? '整天 (1天)' : `${workdays} 工作日`;
+                }
+            }
+
+            hoursBadge.textContent = totalHours.toFixed(1);
+            hoursBadge.classList.toggle('has-value', totalHours > 0);
+
+        } else {
+            // 加班 / 缺勤補打卡：datetime-local 精確模式
+            const startVal = row.querySelector('.start-time').value;
+            const endVal   = row.querySelector('.end-time').value;
+            if (daysBadge) daysBadge.textContent = '—';
+
+            if (startVal && endVal) {
+                const start = new Date(startVal);
+                const end   = new Date(endVal);
+                const diffMs = end - start;
+
+                if (diffMs > 0) {
+                    const rawHours = diffMs / (1000 * 60 * 60);
+                    const rounded  = roundToHalfHour(rawHours, 999); // 加班無硬性上限
+                    hoursBadge.textContent = rounded.toFixed(1);
+                    hoursBadge.classList.add('has-value');
+                } else {
+                    alert('結束時間必須大於開始時間！');
+                    row.querySelector('.end-time').value = '';
+                    hoursBadge.textContent = '0.0';
+                    hoursBadge.classList.remove('has-value');
+                }
+            } else {
+                hoursBadge.textContent = '0.0';
+                hoursBadge.classList.remove('has-value');
+            }
+        }
+
+        updateGrandTotal();
+    }
+
+    // 類別變更時重建列欄位並連動細項
     function handleCategoryChange(selectElem) {
-        updateSubOptions(selectElem);
-        recalculateHours(selectElem);
+        const row = selectElem.closest('tr');
+        const cat = selectElem.value;
+        const currentSub = row.querySelector('.sub-select')?.value || '';
+        const currentStart = row.querySelector('.start-time')?.value || '';
+        const currentEnd = row.querySelector('.end-time')?.value || '';
+        const currentReason = row.querySelector('.reason-input')?.value || '';
+
+        // 類別切換時重建整列 HTML（讓 date/datetime-local 正確切換）
+        row.innerHTML = buildDetailRowHTML(cat, currentSub, '', '', currentReason);
+        updateSubOptions(row.querySelector('.category-select'));
     }
 
     // 依類別動態更新細項下拉清單
@@ -1416,39 +1626,7 @@
         updateGrandTotal();
     }
 
-    // 自動計算時數
-    function recalculateHours(inputElem) {
-        const row = inputElem.closest('tr');
-        const startVal = row.querySelector('.start-time').value;
-        const endVal = row.querySelector('.end-time').value;
-        const hoursBadge = row.querySelector('.row-hours');
-
-        if (startVal && endVal) {
-            const start = new Date(startVal);
-            const end = new Date(endVal);
-            const diffMs = end - start;
-
-            if (diffMs > 0) {
-                let hours = diffMs / (1000 * 60 * 60);
-                // 依半小時(0.5)或一小數點顯示
-                const roundedHours = (Math.round(hours * 2) / 2).toFixed(1);
-                hoursBadge.textContent = roundedHours;
-                hoursBadge.classList.add('has-value');
-            } else {
-                alert('結束時間必須大於開始時間！');
-                row.querySelector('.end-time').value = '';
-                hoursBadge.textContent = '0.0';
-                hoursBadge.classList.remove('has-value');
-            }
-        } else {
-            hoursBadge.textContent = '0.0';
-            hoursBadge.classList.remove('has-value');
-        }
-
-        updateGrandTotal();
-    }
-
-    // 更新總時數
+    // 更新合計時數
     function updateGrandTotal() {
         let total = 0;
         document.querySelectorAll('.row-hours').forEach(elem => {
@@ -1536,10 +1714,24 @@
         rows.forEach(row => {
             const cat = row.querySelector('.category-select')?.value || '';
             const sub = row.querySelector('.sub-select')?.value || '';
-            const start = row.querySelector('.start-time')?.value || '';
-            const end = row.querySelector('.end-time')?.value || '';
+            let start = row.querySelector('.start-time')?.value || '';
+            let end = row.querySelector('.end-time')?.value || '';
             const hours = row.querySelector('.row-hours')?.textContent || '0.0';
             const reason = row.querySelector('.reason-input')?.value || '';
+            const daysText = row.querySelector('.row-days')?.textContent || '';
+
+            if (cat === '請假' && start && end) {
+                const isPartial = row.querySelector('.partial-toggle')?.checked;
+                const startTimeVal = (row.querySelector('.start-time-partial')?.value || '').trim();
+                const endTimeVal = (row.querySelector('.end-time-partial')?.value || '').trim();
+                if (isPartial && startTimeVal && endTimeVal) {
+                    start = `${start} ${startTimeVal}`;
+                    end = `${end} ${endTimeVal}`;
+                } else {
+                    start = `${start} 08:30`;
+                    end = `${end} 18:30`;
+                }
+            }
 
             if (start && end) {
                 details.push({
@@ -1548,7 +1740,7 @@
                     startTime: start.replace('T', ' '),
                     endTime: end.replace('T', ' '),
                     hours: hours,
-                    reason: reason
+                    reason: reason + (daysText && daysText !== '—' ? ` (${daysText})` : '')
                 });
             }
         });
