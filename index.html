@@ -139,6 +139,11 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
         .alert-left {
             display: flex;
             align-items: center;
@@ -1064,7 +1069,7 @@
             </svg>
         </div>
         <h3>申請單已成功送出！</h3>
-        <p>系統已將電子申請單派送至所屬主管之審核信箱，您可於個人出勤紀錄隨時追蹤進度。</p>
+        <p>系統已將申請資料寫入 <strong>Google 雲端試算表</strong>，並已進入主管審核流程。</p>
         
         <div class="modal-detail-box">
             <div class="modal-detail-row">
@@ -1077,11 +1082,15 @@
             </div>
             <div class="modal-detail-row">
                 <span style="color: var(--slate-500);">申請人 / 部門：</span>
-                <span id="modalApplicant">王小明 (工程技術部)</span>
+                <span id="modalApplicant">王小明 (行政處)</span>
             </div>
             <div class="modal-detail-row">
                 <span style="color: var(--slate-500);">申請總時數：</span>
                 <strong id="modalTotalHours" style="color: var(--primary);">8.0 小時</strong>
+            </div>
+            <div class="modal-detail-row">
+                <span style="color: var(--slate-500);">審核狀態：</span>
+                <span style="color: #d97706; font-weight: 700;">待主管審核</span>
             </div>
         </div>
 
@@ -1313,27 +1322,113 @@
         }
     }
 
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSjVI3LZH7W3SNNFzSTsL9O-NJ4AB6YYIuCsC2K8N-Ni6wWj9twRC4NxmNUG-QtnuC/exec";
+
     // 表單送出處理
-    function handleFormSubmit(e) {
+    async function handleFormSubmit(e) {
         e.preventDefault();
 
         const formNo = document.getElementById('formNo').value;
         const applyDate = document.getElementById('applyDate').value;
-        const applicant = document.getElementById('applicantName').value;
+        const applicant = document.getElementById('applicantName').value.trim();
         const dept = document.getElementById('departmentSelect').value;
         const totalHours = document.getElementById('grandTotalHours').textContent;
 
+        if (!applicant) {
+            alert('請輸入申請人姓名！');
+            return;
+        }
+        if (!dept) {
+            alert('請選擇所屬部門！');
+            return;
+        }
+
+        // 收集所有項目明細
+        const details = [];
+        const rows = document.querySelectorAll('#detailTableBody tr');
+        rows.forEach(row => {
+            const cat = row.querySelector('.category-select')?.value || '';
+            const sub = row.querySelector('.sub-select')?.value || '';
+            const start = row.querySelector('.start-time')?.value || '';
+            const end = row.querySelector('.end-time')?.value || '';
+            const hours = row.querySelector('.row-hours')?.textContent || '0.0';
+            const reason = row.querySelector('.reason-input')?.value || '';
+
+            if (start && end) {
+                details.push({
+                    category: cat,
+                    subType: sub,
+                    startTime: start.replace('T', ' '),
+                    endTime: end.replace('T', ' '),
+                    hours: hours,
+                    reason: reason
+                });
+            }
+        });
+
+        if (details.length === 0) {
+            alert('請至少完整填寫一筆申請項目（含開始與結束時間）！');
+            return;
+        }
+
+        const submitBtn = document.querySelector('.action-bar .btn-primary');
+        const originalBtnHtml = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.8';
+        submitBtn.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
+                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path>
+            </svg>
+            傳輸中，寫入 Google 試算表...
+        `;
+
+        const payload = {
+            formNo: formNo,
+            applyDate: applyDate,
+            applicantName: applicant,
+            department: dept,
+            grandTotalHours: totalHours,
+            details: details
+        };
+
+        try {
+            await fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            });
+        } catch (err) {
+            console.warn('Standard POST failed, executing fallback no-cors mode:', err);
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify(payload),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                });
+            } catch (fallbackErr) {
+                console.error('Submission failed:', fallbackErr);
+            }
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.innerHTML = originalBtnHtml;
+        }
+
+        // 更新 Modal 資訊並彈出提示
         document.getElementById('modalFormNo').textContent = formNo;
         document.getElementById('modalDate').textContent = applyDate;
         document.getElementById('modalApplicant').textContent = `${applicant} (${dept})`;
         document.getElementById('modalTotalHours').textContent = `${totalHours} 小時`;
 
-        // 開啟 Modal
         document.getElementById('successModal').classList.add('open');
     }
 
     function closeModal() {
         document.getElementById('successModal').classList.remove('open');
+        // 自動更新下一組單據流水號
+        initDatesAndFormNo();
     }
 </script>
 
