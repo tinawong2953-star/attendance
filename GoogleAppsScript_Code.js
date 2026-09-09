@@ -3,8 +3,8 @@
  * 禾騰技術股份有限公司 考勤出缺勤系統後端 Google Apps Script
  * 【兩階段階層式簽核機制】
  *  - 申請送出：先寄信給「部門主管」（此時執行長不收信）
- *  - ≤ 8 小時：部門主管核准 ➔ 直接完成【已核准】
- *  - > 8 小時：部門主管核准 ➔ 狀態轉為【待執行長審核】➔ 系統自動發信給「執行長」➔ 執行長核准 ➔ 完成【已核准】
+ *  - 時數 < 8 小時：部門主管核准 ➔ 直接完成【已核准】（流程結束）
+ *  - 時數 >= 8 小時：部門主管核准 ➔ 狀態更新 ➔ 系統自動發信給「執行長」➔ 執行長核准 ➔ 完成【已核准】
  *  - 任何階段退回 ➔ 直接轉為【退回修正】並中止流程
  * ============================================================
  */
@@ -102,10 +102,11 @@ function doPost(e) {
 
 /**
  * 【階段一】發送給「部門主管」的審核信（執行長不收信）
+ * 規則：時數 >= 8 小時提示需呈報執行長
  */
 function sendManagerApprovalEmail(formNo, applyDate, applicantName, department, totalHours, details) {
   const managerEmail = DEPT_MANAGERS[department] || DEFAULT_MANAGER_EMAIL;
-  const isOver8Hours = totalHours > 8;
+  const isRequireCeo = totalHours >= 8;
 
   const approveUrl = `${WEB_APP_URL}?action=review&stage=manager&formNo=${encodeURIComponent(formNo)}&decision=approve`;
   const rejectUrl  = `${WEB_APP_URL}?action=review&stage=manager&formNo=${encodeURIComponent(formNo)}&decision=reject`;
@@ -113,11 +114,11 @@ function sendManagerApprovalEmail(formNo, applyDate, applicantName, department, 
   let detailsHtml = "";
   details.forEach(item => {
     detailsHtml += `
-      <tr style="border-bottom: 1px solid #e2e8f0;">
-        <td style="padding: 10px; font-weight: bold; color: #1e293b;">${item.category}（${item.subType}）</td>
-        <td style="padding: 10px; color: #475569;">${item.startTime} ～ ${item.endTime}</td>
-        <td style="padding: 10px; color: #4f46e5; font-weight: bold; text-align: center;">${item.hours} hr</td>
-        <td style="padding: 10px; color: #64748b;">${item.reason || '—'}</td>
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 12px 14px; font-weight: 700; color: #1e293b;">${item.category} <span style="font-weight: normal; color: #64748b; font-size: 12px;">(${item.subType})</span></td>
+        <td style="padding: 12px 14px; color: #475569; font-size: 13px;">${item.startTime} ～ ${item.endTime}</td>
+        <td style="padding: 12px 14px; color: #4f46e5; font-weight: 800; text-align: center; font-size: 14px;">${item.hours} hr</td>
+        <td style="padding: 12px 14px; color: #64748b; font-size: 12px;">${item.reason || '—'}</td>
       </tr>
     `;
   });
@@ -125,54 +126,94 @@ function sendManagerApprovalEmail(formNo, applyDate, applicantName, department, 
   const emailSubject = `【主管簽核通知】${applicantName} - ${department}（單號：${formNo}，時數：${totalHours} 小時）`;
 
   const emailBodyHtml = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans TC', sans-serif; max-width: 620px; margin: 20px auto; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px rgba(0,0,0,0.04); overflow: hidden;">
       
-      <div style="background: linear-gradient(135deg, #4f46e5, #4338ca); padding: 24px 28px; color: #ffffff;">
-        <div style="font-size: 13px; letter-spacing: 1px; opacity: 0.85; margin-bottom: 4px;">禾騰技術股份有限公司 · 部門主管審核</div>
-        <h2 style="margin: 0; font-size: 20px; font-weight: 700;">出缺勤 / 請假申請單（第一階段審核）</h2>
+      <!-- 頂部品牌 Banner -->
+      <div style="background: linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%); padding: 28px 32px; color: #ffffff;">
+        <div style="display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; margin-bottom: 8px;">
+          禾騰技術股份有限公司 · 考勤審核
+        </div>
+        <h2 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">出缺勤 / 請假申請單</h2>
+        <div style="font-size: 13px; opacity: 0.9; margin-top: 4px;">第一階段：部門主管審核</div>
       </div>
 
-      <div style="padding: 24px 28px;">
-        <div style="background: #f8fafc; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
-          <table style="width: 100%; font-size: 14px; color: #334155;">
-            <tr><td style="padding: 4px 0; width: 90px; color: #64748b;">單據編號：</td><td style="padding: 4px 0; font-weight: 700; font-family: monospace;">${formNo}</td></tr>
-            <tr><td style="padding: 4px 0; color: #64748b;">申請同仁：</td><td style="padding: 4px 0; font-weight: 700;">${applicantName}（${department}）</td></tr>
-            <tr><td style="padding: 4px 0; color: #64748b;">填單日期：</td><td style="padding: 4px 0;">${applyDate}</td></tr>
-            <tr><td style="padding: 4px 0; color: #64748b;">申請總時數：</td><td style="padding: 4px 0; font-size: 16px; font-weight: 800; color: #4f46e5;">${totalHours} 小時</td></tr>
-            ${isOver8Hours ? `<tr><td colspan="2" style="padding-top: 6px; font-size: 12px; color: #0284c7; font-weight: bold;">ℹ️ 此申請時數超過 8 小時，您核准後系統將自動轉呈執行長進行第二階段核准。</td></tr>` : ''}
+      <div style="padding: 28px 32px;">
+        
+        <!-- 資訊卡片 -->
+        <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid #edf2f7;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <tr>
+              <td style="padding: 6px 0; width: 90px; color: #64748b; font-size: 13px;">單據編號</td>
+              <td style="padding: 6px 0; font-weight: 800; font-family: monospace; color: #0f172a; font-size: 15px;">${formNo}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b; font-size: 13px;">申請同仁</td>
+              <td style="padding: 6px 0; font-weight: 700; color: #1e293b;">${applicantName} <span style="font-weight: normal; color: #64748b;">(${department})</span></td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b; font-size: 13px;">填單日期</td>
+              <td style="padding: 6px 0; color: #334155;">${applyDate}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b; font-size: 13px;">申請總時數</td>
+              <td style="padding: 6px 0; font-size: 18px; font-weight: 900; color: #4f46e5;">${totalHours} <span style="font-size: 13px; font-weight: bold; color: #64748b;">小時</span></td>
+            </tr>
+            ${isRequireCeo ? `
+            <tr>
+              <td colspan="2" style="padding-top: 10px;">
+                <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 8px 12px; border-radius: 4px; font-size: 12px; color: #1e40af; font-weight: 600;">
+                  ⚡ 本單申請時數滿 8 小時（含）以上，依公司規定您核准後將自動轉呈執行長覆核。
+                </div>
+              </td>
+            </tr>` : ''}
           </table>
         </div>
 
-        <h3 style="font-size: 15px; color: #0f172a; margin: 0 0 10px 0;">申請項目明細</h3>
-        <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 24px;">
+        <!-- 申請明細表 -->
+        <div style="font-size: 14px; font-weight: 800; color: #0f172a; margin-bottom: 10px;">申請項目明細</div>
+        <table style="width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 28px;">
           <thead>
-            <tr style="background: #f1f5f9; text-align: left; color: #475569;">
-              <th style="padding: 8px 10px;">類別 / 細項</th>
-              <th style="padding: 8px 10px;">申請時段</th>
-              <th style="padding: 8px 10px; text-align: center;">時數</th>
-              <th style="padding: 8px 10px;">備註事由</th>
+            <tr style="background: #f8fafc; text-align: left; font-size: 12px; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+              <th style="padding: 10px 14px;">類別 / 細項</th>
+              <th style="padding: 10px 14px;">申請時段</th>
+              <th style="padding: 10px 14px; text-align: center;">時數</th>
+              <th style="padding: 10px 14px;">備註事由</th>
             </tr>
           </thead>
           <tbody>${detailsHtml}</tbody>
         </table>
 
-        <div style="background: #faf5ff; border: 1px dashed #d8b4fe; border-radius: 10px; padding: 20px; text-align: center; margin-top: 24px;">
-          <div style="font-size: 14px; font-weight: bold; color: #6b21a8; margin-bottom: 14px;">部門主管線上審核批示</div>
-          <div style="display: inline-block;">
-            <a href="${approveUrl}" target="_blank" style="background: #16a34a; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: bold; font-size: 15px; display: inline-block; margin-right: 12px; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25);">
-              ✅ 部門主管 核准
-            </a>
-            <a href="${rejectUrl}" target="_blank" style="background: #dc2626; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: bold; font-size: 15px; display: inline-block; box-shadow: 0 2px 4px rgba(220, 38, 38, 0.25);">
-              ❌ 退回修正
-            </a>
+        <!-- 精美現代化 SaaS 簽核按鈕區 -->
+        <div style="background: #fdfefe; border: 1px solid #e0e7ff; border-radius: 14px; padding: 24px 20px; text-align: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);">
+          <div style="font-size: 14px; font-weight: 800; color: #1e1b4b; margin-bottom: 18px; letter-spacing: 0.2px;">
+            請點選下方按鈕進行線上批示
           </div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 12px;">點選上方按鈕後即時生效並更新試算表紀錄。</div>
+          
+          <table style="margin: 0 auto; border-collapse: separate; border-spacing: 16px 0;">
+            <tr>
+              <td>
+                <a href="${approveUrl}" target="_blank" style="background: linear-gradient(180deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 13px 32px; border-radius: 10px; font-weight: 800; font-size: 15px; display: inline-block; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35); text-shadow: 0 1px 2px rgba(0,0,0,0.2); letter-spacing: 0.5px;">
+                  ✔&nbsp;&nbsp;部門主管 核准
+                </a>
+              </td>
+              <td>
+                <a href="${rejectUrl}" target="_blank" style="background: linear-gradient(180deg, #f43f5e 0%, #e11d48 100%); color: #ffffff; text-decoration: none; padding: 13px 32px; border-radius: 10px; font-weight: 800; font-size: 15px; display: inline-block; box-shadow: 0 4px 14px rgba(225, 29, 72, 0.3); text-shadow: 0 1px 2px rgba(0,0,0,0.2); letter-spacing: 0.5px;">
+                  ✕&nbsp;&nbsp;退回修正
+                </a>
+              </td>
+            </tr>
+          </table>
+
+          <div style="font-size: 11px; color: #94a3b8; margin-top: 16px;">
+            點選按鈕後將立即開啟確認頁面，並同步回寫 Google 試算表。
+          </div>
         </div>
 
       </div>
 
-      <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 28px; font-size: 11px; color: #94a3b8; text-align: center;">
-        此為禾騰技術股份有限公司考勤系統自動發送之信件，請勿直接回覆。
+      <!-- 頁尾 -->
+      <div style="background: #f8fafc; border-top: 1px solid #f1f5f9; padding: 16px; font-size: 11px; color: #94a3b8; text-align: center;">
+        此為禾騰技術股份有限公司考勤系統自動通知，請勿直接回覆此信件。
       </div>
 
     </div>
@@ -186,7 +227,7 @@ function sendManagerApprovalEmail(formNo, applyDate, applicantName, department, 
 }
 
 /**
- * 【階段二】發送給「執行長」的審核信（僅在主管核准且 >8 小時觸發）
+ * 【階段二】發送給「執行長」的審核信（僅在主管核准且 >= 8 小時觸發）
  */
 function sendCeoApprovalEmail(formNo, applyDate, applicantName, department, totalHours, details, managerApproveTime) {
   const approveUrl = `${WEB_APP_URL}?action=review&stage=ceo&formNo=${encodeURIComponent(formNo)}&decision=approve`;
@@ -195,11 +236,11 @@ function sendCeoApprovalEmail(formNo, applyDate, applicantName, department, tota
   let detailsHtml = "";
   details.forEach(item => {
     detailsHtml += `
-      <tr style="border-bottom: 1px solid #e2e8f0;">
-        <td style="padding: 10px; font-weight: bold; color: #1e293b;">${item.category}（${item.subType}）</td>
-        <td style="padding: 10px; color: #475569;">${item.startTime} ～ ${item.endTime}</td>
-        <td style="padding: 10px; color: #4f46e5; font-weight: bold; text-align: center;">${item.hours} hr</td>
-        <td style="padding: 10px; color: #64748b;">${item.reason || '—'}</td>
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 12px 14px; font-weight: 700; color: #1e293b;">${item.category} <span style="font-weight: normal; color: #64748b; font-size: 12px;">(${item.subType})</span></td>
+        <td style="padding: 12px 14px; color: #475569; font-size: 13px;">${item.startTime} ～ ${item.endTime}</td>
+        <td style="padding: 12px 14px; color: #ea580c; font-weight: 800; text-align: center; font-size: 14px;">${item.hours} hr</td>
+        <td style="padding: 12px 14px; color: #64748b; font-size: 12px;">${item.reason || '—'}</td>
       </tr>
     `;
   });
@@ -207,54 +248,90 @@ function sendCeoApprovalEmail(formNo, applyDate, applicantName, department, tota
   const emailSubject = `【呈報執行長簽核】${applicantName} - ${department}（單號：${formNo}，時數：${totalHours} 小時）`;
 
   const emailBodyHtml = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans TC', sans-serif; max-width: 620px; margin: 20px auto; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px rgba(0,0,0,0.04); overflow: hidden;">
       
-      <div style="background: linear-gradient(135deg, #0f172a, #334155); padding: 24px 28px; color: #ffffff;">
-        <div style="font-size: 13px; letter-spacing: 1px; opacity: 0.85; margin-bottom: 4px;">禾騰技術股份有限公司 · 執行長最終簽核</div>
-        <h2 style="margin: 0; font-size: 20px; font-weight: 700;">出缺勤申請呈報（超過8小時覆核）</h2>
+      <!-- 頂部黑金高階 Banner -->
+      <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 28px 32px; color: #ffffff;">
+        <div style="display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 20px; margin-bottom: 8px; color: #fdba74;">
+          禾騰技術股份有限公司 · 執行長核決
+        </div>
+        <h2 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">考勤申請 最終呈報覆核</h2>
+        <div style="font-size: 13px; opacity: 0.85; margin-top: 4px;">第二階段：滿 8 小時（含）以上管理階層覆核</div>
       </div>
 
-      <div style="padding: 24px 28px;">
-        <div style="background: #f8fafc; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
-          <table style="width: 100%; font-size: 14px; color: #334155;">
-            <tr><td style="padding: 4px 0; width: 90px; color: #64748b;">單據編號：</td><td style="padding: 4px 0; font-weight: 700; font-family: monospace;">${formNo}</td></tr>
-            <tr><td style="padding: 4px 0; color: #64748b;">申請同仁：</td><td style="padding: 4px 0; font-weight: 700;">${applicantName}（${department}）</td></tr>
-            <tr><td style="padding: 4px 0; color: #64748b;">填單日期：</td><td style="padding: 4px 0;">${applyDate}</td></tr>
-            <tr><td style="padding: 4px 0; color: #64748b;">申請總時數：</td><td style="padding: 4px 0; font-size: 16px; font-weight: 800; color: #ea580c;">${totalHours} 小時</td></tr>
-            <tr><td style="padding: 4px 0; color: #64748b;">主管初審：</td><td style="padding: 4px 0; font-weight: bold; color: #16a34a;">已於 ${managerApproveTime} 核准通過</td></tr>
+      <div style="padding: 28px 32px;">
+        
+        <!-- 資訊卡片 -->
+        <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid #edf2f7;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <tr>
+              <td style="padding: 6px 0; width: 90px; color: #64748b; font-size: 13px;">單據編號</td>
+              <td style="padding: 6px 0; font-weight: 800; font-family: monospace; color: #0f172a; font-size: 15px;">${formNo}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b; font-size: 13px;">申請同仁</td>
+              <td style="padding: 6px 0; font-weight: 700; color: #1e293b;">${applicantName} <span style="font-weight: normal; color: #64748b;">(${department})</span></td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b; font-size: 13px;">填單日期</td>
+              <td style="padding: 6px 0; color: #334155;">${applyDate}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b; font-size: 13px;">申請總時數</td>
+              <td style="padding: 6px 0; font-size: 18px; font-weight: 900; color: #ea580c;">${totalHours} <span style="font-size: 13px; font-weight: bold; color: #64748b;">小時</span></td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b; font-size: 13px;">主管初審紀錄</td>
+              <td style="padding: 6px 0; font-weight: bold; color: #16a34a; font-size: 13px;">✔ 部門主管已於 ${managerApproveTime} 初審通過</td>
+            </tr>
           </table>
         </div>
 
-        <h3 style="font-size: 15px; color: #0f172a; margin: 0 0 10px 0;">申請項目明細</h3>
-        <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 24px;">
+        <!-- 申請明細表 -->
+        <div style="font-size: 14px; font-weight: 800; color: #0f172a; margin-bottom: 10px;">申請項目明細</div>
+        <table style="width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 28px;">
           <thead>
-            <tr style="background: #f1f5f9; text-align: left; color: #475569;">
-              <th style="padding: 8px 10px;">類別 / 細項</th>
-              <th style="padding: 8px 10px;">申請時段</th>
-              <th style="padding: 8px 10px; text-align: center;">時數</th>
-              <th style="padding: 8px 10px;">備註事由</th>
+            <tr style="background: #f8fafc; text-align: left; font-size: 12px; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+              <th style="padding: 10px 14px;">類別 / 細項</th>
+              <th style="padding: 10px 14px;">申請時段</th>
+              <th style="padding: 10px 14px; text-align: center;">時數</th>
+              <th style="padding: 10px 14px;">備註事由</th>
             </tr>
           </thead>
           <tbody>${detailsHtml}</tbody>
         </table>
 
-        <div style="background: #fff7ed; border: 1px dashed #fdba74; border-radius: 10px; padding: 20px; text-align: center; margin-top: 24px;">
-          <div style="font-size: 14px; font-weight: bold; color: #c2410c; margin-bottom: 14px;">執行長線上審核批示</div>
-          <div style="display: inline-block;">
-            <a href="${approveUrl}" target="_blank" style="background: #ea580c; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: bold; font-size: 15px; display: inline-block; margin-right: 12px; box-shadow: 0 2px 4px rgba(234, 88, 12, 0.25);">
-              ✅ 執行長 核准
-            </a>
-            <a href="${rejectUrl}" target="_blank" style="background: #dc2626; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: bold; font-size: 15px; display: inline-block; box-shadow: 0 2px 4px rgba(220, 38, 38, 0.25);">
-              ❌ 退回修正
-            </a>
+        <!-- 執行長核准按鈕區 -->
+        <div style="background: #fffbf5; border: 1px solid #fed7aa; border-radius: 14px; padding: 24px 20px; text-align: center;">
+          <div style="font-size: 14px; font-weight: 800; color: #7c2d12; margin-bottom: 18px;">
+            請執行長點選批示（最終核決）
           </div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 12px;">點選上方按鈕後，單據將完成最終簽核。</div>
+          
+          <table style="margin: 0 auto; border-collapse: separate; border-spacing: 16px 0;">
+            <tr>
+              <td>
+                <a href="${approveUrl}" target="_blank" style="background: linear-gradient(180deg, #ea580c 0%, #c2410c 100%); color: #ffffff; text-decoration: none; padding: 13px 34px; border-radius: 10px; font-weight: 800; font-size: 15px; display: inline-block; box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35); text-shadow: 0 1px 2px rgba(0,0,0,0.25); letter-spacing: 0.5px;">
+                  ✔&nbsp;&nbsp;執行長 核准通過
+                </a>
+              </td>
+              <td>
+                <a href="${rejectUrl}" target="_blank" style="background: linear-gradient(180deg, #f43f5e 0%, #e11d48 100%); color: #ffffff; text-decoration: none; padding: 13px 34px; border-radius: 10px; font-weight: 800; font-size: 15px; display: inline-block; box-shadow: 0 4px 14px rgba(225, 29, 72, 0.3); text-shadow: 0 1px 2px rgba(0,0,0,0.25); letter-spacing: 0.5px;">
+                  ✕&nbsp;&nbsp;退回修正
+                </a>
+              </td>
+            </tr>
+          </table>
+
+          <div style="font-size: 11px; color: #9a3412; margin-top: 16px; opacity: 0.8;">
+            此為最終核決階段，點選核准後單據將正式完成審批並備存於試算表。
+          </div>
         </div>
 
       </div>
 
-      <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 28px; font-size: 11px; color: #94a3b8; text-align: center;">
-        此為禾騰技術股份有限公司考勤系統自動發送之信件，請勿直接回覆。
+      <!-- 頁尾 -->
+      <div style="background: #f8fafc; border-top: 1px solid #f1f5f9; padding: 16px; font-size: 11px; color: #94a3b8; text-align: center;">
+        此為禾騰技術股份有限公司考勤系統自動通知，請勿直接回覆此信件。
       </div>
 
     </div>
@@ -320,15 +397,15 @@ function doGet(e) {
       const who = (stage === "ceo") ? "執行長" : "部門主管";
       finalLog = `由【${who}】於 ${reviewTime} 退回修正`;
     } else {
-      // 核准情境
+      // 核准情境：滿 8 小時（含）以上需轉呈執行長
       if (stage === "manager") {
-        if (totalHours > 8) {
-          // 超過 8 小時：進入第二階段
-          finalStatus = "待執行長審核";
-          finalLog = `由【部門主管】於 ${reviewTime} 核准通過，待執行長覆核`;
+        if (totalHours >= 8) {
+          // 滿 8 小時（含）：進入第二階段
+          finalStatus = "待審核"; // 保持相容「待審核」，同時在備註標明
+          finalLog = `由【部門主管】於 ${reviewTime} 初審通過，待執行長覆核`;
           isNextToCeo = true;
         } else {
-          // 8 小時以內：直接完結
+          // 未滿 8 小時：直接完結
           finalStatus = "已核准";
           finalLog = `由【部門主管】於 ${reviewTime} 核准通過（簽核完畢）`;
         }
@@ -351,10 +428,10 @@ function doGet(e) {
       sendCeoApprovalEmail(formNo, applyDate, applicantName, department, totalHours, details, reviewTime);
     }
 
-    // 顯示漂亮的結果網頁
-    const primaryColor = isApproved ? (isNextToCeo ? "#ea580c" : "#16a34a") : "#dc2626";
-    const icon = isApproved ? (isNextToCeo ? "⏳" : "✅") : "⚠️";
-    const titleText = isApproved ? (isNextToCeo ? "主管初審已完成（已轉呈執行長）" : "簽核作業已完成") : "單據已退回修正";
+    // 顯示現代化簽核完成回饋頁面
+    const primaryColor = isApproved ? (isNextToCeo ? "#ea580c" : "#10b981") : "#f43f5e";
+    const icon = isApproved ? (isNextToCeo ? "⏳" : "✔") : "✕";
+    const titleText = isApproved ? (isNextToCeo ? "部門主管初審已完成（已轉呈執行長覆核）" : "簽核作業已順利完成") : "單據已退回修正";
 
     const responseHtml = `
       <!DOCTYPE html>
@@ -365,28 +442,28 @@ function doGet(e) {
         <title>考勤簽核結果 - 禾騰技術股份有限公司</title>
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-          .card { background: white; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); padding: 40px; max-width: 480px; width: 100%; text-align: center; border-top: 6px solid ${primaryColor}; }
-          .icon { font-size: 56px; margin-bottom: 16px; }
-          h2 { margin: 0 0 8px 0; color: #1e293b; font-size: 22px; }
+          .card { background: white; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.06); padding: 44px 36px; max-width: 480px; width: 100%; text-align: center; border-top: 6px solid ${primaryColor}; }
+          .icon-wrap { width: 64px; height: 64px; border-radius: 50%; background: ${primaryColor}15; color: ${primaryColor}; font-size: 32px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-weight: bold; }
+          h2 { margin: 0 0 10px 0; color: #0f172a; font-size: 22px; font-weight: 800; }
           p { color: #64748b; font-size: 14px; line-height: 1.6; margin: 8px 0; }
-          .badge { display: inline-block; background: ${isApproved ? (isNextToCeo ? '#fff7ed' : '#dcfce7') : '#fee2e2'}; color: ${primaryColor}; padding: 6px 16px; border-radius: 999px; font-weight: bold; font-size: 14px; margin: 16px 0; }
-          .info-box { background: #f1f5f9; border-radius: 8px; padding: 14px; margin: 20px 0; text-align: left; font-size: 13px; color: #334155; }
+          .badge { display: inline-block; background: ${isApproved ? (isNextToCeo ? '#fff7ed' : '#ecfdf5') : '#fff1f2'}; color: ${primaryColor}; padding: 7px 20px; border-radius: 999px; font-weight: 800; font-size: 14px; margin: 16px 0; border: 1px solid ${primaryColor}30; }
+          .info-box { background: #f8fafc; border-radius: 12px; padding: 18px; margin: 20px 0; text-align: left; font-size: 13px; color: #334155; border: 1px solid #e2e8f0; line-height: 1.8; }
           .footer { color: #94a3b8; font-size: 12px; margin-top: 24px; }
         </style>
       </head>
       <body>
         <div class="card">
-          <div class="icon">${icon}</div>
+          <div class="icon-wrap">${icon}</div>
           <h2>${titleText}</h2>
-          <div class="badge">目前單據狀態：${finalStatus}</div>
-          <p>單據編號 <strong>${formNo}</strong> 的批示紀錄已即時回寫至 Google 試算表。${isNextToCeo ? '<br><strong style="color:#ea580c;">系統已自動寄發簽核通知至執行長信箱 (' + CEO_EMAIL + ')。</strong>' : ''}</p>
+          <div class="badge">${isNextToCeo ? '單據已送交執行長覆核' : '單據狀態：' + finalStatus}</div>
+          <p>單據編號 <strong>${formNo}</strong> 的批示結果已即時回寫至 Google 試算表。${isNextToCeo ? '<br><strong style="color:#ea580c;">系統已自動發信通知執行長進行最終審核。</strong>' : ''}</p>
           <div class="info-box">
             <div><strong>單據編號：</strong> ${formNo}</div>
             <div><strong>申請同仁：</strong> ${applicantName} (${department})</div>
             <div><strong>申請時數：</strong> ${totalHours} 小時</div>
-            <div><strong>簽核歷程：</strong> ${finalLog}</div>
+            <div><strong>最新進度：</strong> ${finalLog}</div>
           </div>
-          <div class="footer">感謝您的批示，您現在可以關閉此視窗。</div>
+          <div class="footer">感謝您的批示，您現在可以安心關閉此分頁。</div>
         </div>
       </body>
       </html>
@@ -463,13 +540,13 @@ function resendSelectedRowEmail() {
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
     const formNo = String(row[1] || "").trim();
-    const status = String(row[11] || "").trim();
+    const comment = String(row[12] || "").trim();
     if (!formNo) continue;
 
     if (!formsMap[formNo]) {
       formsMap[formNo] = {
         formNo: formNo,
-        status: status,
+        comment: comment,
         applyDate: row[2] ? Utilities.formatDate(new Date(row[2]), "Asia/Taipei", "yyyy-MM-dd") : "",
         applicantName: String(row[3] || ""),
         department: String(row[4] || ""),
@@ -498,16 +575,14 @@ function resendSelectedRowEmail() {
 
   formKeys.forEach(fNo => {
     const item = formsMap[fNo];
-    if (item.status === "待執行長審核") {
-      // 補寄給執行長
-      sendCeoApprovalEmail(item.formNo, item.applyDate, item.applicantName, item.department, item.totalHours, item.details, "手動補發");
+    if (item.comment.includes("待執行長覆核")) {
+      sendCeoApprovalEmail(item.formNo, item.applyDate, item.applicantName, item.department, item.totalHours, item.details, "主管已審核");
     } else {
-      // 補寄給部門主管
       sendManagerApprovalEmail(item.formNo, item.applyDate, item.applicantName, item.department, item.totalHours, item.details);
     }
   });
 
-  ui.alert(`✅ 補發成功！已寄出相應階段的審核通知信。`);
+  ui.alert(`✅ 補發成功！已發送相應審核信件。`);
 }
 
 /**
@@ -528,13 +603,14 @@ function resendAllPendingEmails() {
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     const status = String(row[11] || "").trim();
+    const comment = String(row[12] || "").trim();
     const formNo = String(row[1] || "").trim();
 
-    if ((status === "待審核" || status === "待執行長審核" || status === "") && formNo) {
+    if ((status === "待審核" || status === "") && formNo) {
       if (!pendingForms[formNo]) {
         pendingForms[formNo] = {
           formNo: formNo,
-          status: status,
+          comment: comment,
           applyDate: row[2] ? Utilities.formatDate(new Date(row[2]), "Asia/Taipei", "yyyy-MM-dd") : "",
           applicantName: String(row[3] || ""),
           department: String(row[4] || ""),
@@ -563,8 +639,8 @@ function resendAllPendingEmails() {
 
   pendingKeys.forEach(fNo => {
     const item = pendingForms[fNo];
-    if (item.status === "待執行長審核") {
-      sendCeoApprovalEmail(item.formNo, item.applyDate, item.applicantName, item.department, item.totalHours, item.details, "手動補發");
+    if (item.comment.includes("待執行長覆核")) {
+      sendCeoApprovalEmail(item.formNo, item.applyDate, item.applicantName, item.department, item.totalHours, item.details, "主管已審核");
     } else {
       sendManagerApprovalEmail(item.formNo, item.applyDate, item.applicantName, item.department, item.totalHours, item.details);
     }
