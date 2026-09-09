@@ -1928,7 +1928,10 @@
             let badgeClass = 'pending';
             let badgeText = '⏳ 待主管審核';
 
-            if (item.status === '已核准') {
+            if (item.status === '待執行長審核') {
+                badgeClass = 'pending';
+                badgeText = '👔 待執行長審核';
+            } else if (item.status === '已核准') {
                 badgeClass = 'approved';
                 badgeText = '✅ 已核准';
             } else if (item.status && item.status.includes('退回')) {
