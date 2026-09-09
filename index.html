@@ -558,14 +558,14 @@
 
         .workflow-steps {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 16px;
             position: relative;
         }
 
         @media (max-width: 680px) {
             .workflow-steps {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: 1fr;
             }
         }
 
@@ -1153,12 +1153,17 @@
 
             <!-- 區塊 4: 簽核流程步進進度 -->
             <div class="workflow-card">
-                <div style="font-size: 13px; font-weight: 700; color: var(--slate-700); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="9 11 12 14 22 4"></polyline>
-                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-                    </svg>
-                    標準簽核審查流程
+                <div style="font-size: 13px; font-weight: 700; color: var(--slate-700); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 11 12 14 22 4"></polyline>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                        標準簽核審查流程
+                    </div>
+                    <span style="font-size: 11px; color: var(--slate-500); font-weight: normal;">
+                        📌 ≤ 8小時主管核准即結案；超過8小時主管核准後自動轉呈執行長
+                    </span>
                 </div>
                 <div class="workflow-steps">
                     <div class="step-item active">
@@ -1169,17 +1174,12 @@
                     <div class="step-item">
                         <div class="step-index">2</div>
                         <div class="step-name">部門主管</div>
-                        <div class="step-status">送出後待審核</div>
+                        <div class="step-status">第一階段審核</div>
                     </div>
                     <div class="step-item">
-                        <div class="step-index">3</div>
-                        <div class="step-name">考勤 HR 覆核</div>
-                        <div class="step-status">待差勤核算</div>
-                    </div>
-                    <div class="step-item">
-                        <div class="step-index">4</div>
-                        <div class="step-name">管理階層核決</div>
-                        <div class="step-status">最終核准</div>
+                        <div class="step-index" style="background: #fff7ed; color: #ea580c; border: 1px solid #fed7aa;">3</div>
+                        <div class="step-name" style="color: #0f172a;">執行長 覆核</div>
+                        <div class="step-status" style="color: #ea580c;">超過 8 小時自動呈報</div>
                     </div>
                 </div>
             </div>
